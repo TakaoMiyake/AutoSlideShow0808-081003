@@ -2,6 +2,7 @@ package jp.techacademy.takao.miyake.autoslideshow0808
 
 import android.os.Bundle
 import android.Manifest
+import android.content.ContentResolver
 import android.os.Build
 import android.util.Log
 import android.provider.MediaStore
@@ -22,7 +23,7 @@ import java.util.*
 import kotlin.system.exitProcess
 
 
-class MainActivity : AppCompatActivity(),View.OnClickListener{
+class MainActivity : AppCompatActivity(),View.OnClickListener {
 
     private var mTimer: Timer? = null
     private var mTimerSec = 0.0
@@ -31,18 +32,27 @@ class MainActivity : AppCompatActivity(),View.OnClickListener{
     private lateinit var grantResults: IntArray
 
     private val PERMISSIONS_REQUEST_CODE = 100
-    private var cursor: Cursor?= null
-    private var imageUri:Uri? = null
+    private var cursor: Cursor? = null
+    lateinit var resolver: ContentResolver
 
+    private var imageUri: Uri? = null
+    private var fieldIndex: Int = 0
+    private var id: Long = 0
+    var v: View? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        var go_button_Id: Int = 0
+        var back_button_Id: Int = 0
+        var playandstop_button_Id: Int = 0
+
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                 Log.d("ANDROID", "許可されている")
-
+                getContentsInfo()
             } else {
                 Log.d("ANDROID", "許可されていない")
                 requestPermissions(
@@ -50,41 +60,36 @@ class MainActivity : AppCompatActivity(),View.OnClickListener{
                     PERMISSIONS_REQUEST_CODE
                 )
             }
-        }else{
-
         }
 
-            //進むボタン時の処理
-            go_button.setOnClickListener{
 
-            }
+        imageView.setImageURI(imageUri)
+        Log.d("ANDROID", "ボタンクリック前: " + imageUri.toString())
+        //進むボタン時の処理
+        go_button.setOnClickListener(this)
 
+        //戻るボタンの処理
+        back_button.setOnClickListener(this)
 
-            //戻るボタンの処理
-            back_button.setOnClickListener{
+        //再生／停止ボタンの処理
+        playandstop_button.setOnClickListener(this)
 
-            }
-
-
-            //再生／停止ボタンの処理
-            playandstop_button.setOnClickListener{
-
-            }
 
     }
+
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
         grantResults: IntArray
     ) {
-       // Log.d("ANDROID", PERMISSIONS_REQUEST_CODE.toString())
+        // Log.d("ANDROID", PERMISSIONS_REQUEST_CODE.toString())
 
         when (requestCode) {
             PERMISSIONS_REQUEST_CODE ->
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Log.d("ANDROID", "許可された")
-                     getContentsInfo()
+                    getContentsInfo()
                 } else {
                     Log.d("ANDROID", "許可されなかった")
                     Toast.makeText(this, "許可してください", Toast.LENGTH_SHORT).show()
@@ -92,10 +97,12 @@ class MainActivity : AppCompatActivity(),View.OnClickListener{
                 }
         }
     }
+
     private fun getContentsInfo() {
+
         // 画像の情報を取得する
-        val resolver = contentResolver
-        val cursor = resolver.query(
+        resolver = contentResolver
+        cursor = resolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI, // データの種類
             null, // 項目(null = 全項目)
             null, // フィルタ条件(null = フィルタなし)
@@ -105,67 +112,120 @@ class MainActivity : AppCompatActivity(),View.OnClickListener{
 
         if (cursor!!.moveToFirst()) {
             // indexからIDを取得し、そのIDから画像のURIを取得する
-            val fieldIndex = cursor.getColumnIndex(MediaStore.Images.Media._ID)
-            val id = cursor.getLong(fieldIndex)
-            val imageUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
+            fieldIndex = cursor!!.getColumnIndex(MediaStore.Images.Media._ID)
+            id = cursor!!.getLong(fieldIndex)
+            imageUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
 
-            Log.d("ANDROID", "URI : " + imageUri.toString())
-            imageView.setImageURI(imageUri)
 
         }
-        cursor.close()
     }
 
+    override fun onClick(v: View?) {
 
-    override fun onClick(v:View?) {
+        fieldIndex = cursor!!.getColumnIndex(MediaStore.Images.Media._ID)
+        id = cursor!!.getLong(fieldIndex)
+        imageUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
 
-         //進むボタンクリック時
-            if (v!!.id == R.id.go_button) {
+        //進むボタンクリック時
+        if (v!!.id == R.id.go_button) {
 
-                //次の画像がなかったら先頭の画像取得
-                if (!cursor!!.moveToNext()) {
-                    cursor!!.moveToFirst()
-                    getContentsInfo()
-                }
-                //次の画像を取得
-                else {
-                    cursor!!.moveToNext()
-                    getContentsInfo()
-                }
-
-            }
-            //戻るボタンクリック時
-            else if (v!!.id == R.id.back_button) {
-
-                //前の画像がなかったら最後の画像取得
-                if (!cursor!!.moveToPrevious()) {
-                    cursor!!.moveToLast()
-                    getContentsInfo()
-                }
-
-                else {
-                    cursor!!.moveToPrevious()
-                    getContentsInfo()
-                }
+            //次の画像がなかったら先頭の画像取得
+            if (!cursor!!.moveToNext()) {
+                cursor!!.moveToFirst()
+                Log.d("ANDROID", "gobutton内URI Null時 : " + imageUri.toString())
 
                 imageView.setImageURI(imageUri)
-                Log.d("ANDROID", "URI : " + imageUri.toString())
-            }
 
-            //再生／停止ボタンクリック時
-            else if (v!!.id == R.id.playandstop_button) {
-                //I have no ideas to indicate around this area so far
             }
-
+            //次の画像を取得
             else {
-                cursor!!.close()
+
+                Log.d("ANDROID", "gobutton内URI 非Null時: " + imageUri.toString())
+                imageView.setImageURI(imageUri)
+
             }
+
+        }
+
+        //戻るボタンクリック時
+        if (v!!.id == R.id.back_button) {
+
+            //前の画像がなかったら最後の画像取得
+            if (!cursor!!.moveToPrevious()) {
+                cursor!!.moveToLast()
+                imageView.setImageURI(imageUri)
+                Log.d("ANDROID", "backbutton内URI Null時: " + imageUri.toString())
+
+            } else {
+
+                imageView.setImageURI(imageUri)
+                Log.d("ANDROID", "backbutton内URI 非Null時: " + imageUri.toString())
+
+            }
+
+        }
+
+        //再生／停止ボタンクリック時
+        if (v!!.id == R.id.playandstop_button) {
+
+
+            if (playandstop_button.text.toString() == "再生") {
+
+
+                go_button.isClickable = false
+                back_button.isClickable = false
+                playandstop_button.text = "停止"
+
+                if (mTimer == null) {
+                    mTimer = Timer()
+                    mTimer!!.schedule(object : TimerTask() {
+                        override fun run() {
+
+                            mHandler.post {
+
+                                if (!cursor!!.moveToNext()) {
+                                    cursor!!.moveToFirst()
+                                    Log.d(
+                                        "ANDROID",
+                                        "playandstop内URI Null時 : " + imageUri.toString()
+                                    )
+
+                                    imageView.setImageURI(imageUri)
+
+                                }
+                                //次の画像を取得
+                                else {
+
+                                    Log.d(
+                                        "ANDROID",
+                                        "playandstop内URI 非Null時: " + imageUri.toString()
+                                    )
+                                    imageView.setImageURI(imageUri)
+
+                                }
+                                cursor!!.moveToNext()
+                                imageView.setImageURI(imageUri)
+                            }
+                        }
+                    }, 2000, 2000)
+                }
+            }
+            if (playandstop_button.text.toString() == "停止") {
+                go_button.isClickable = true
+                back_button.isClickable = true
+                playandstop_button.text = "再生"
+
+                if (mTimer != null) {
+                    mTimer!!.cancel()
+                    mTimer = null
+                }
+
+            }
+        }
 
     }
-
-
-
 }
+
 
 
 

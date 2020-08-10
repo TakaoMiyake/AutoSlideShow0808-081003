@@ -9,36 +9,36 @@ android:layout_height="match_parent">
 <ImageView
     android:id="@+id/imageView"
     android:layout_width="match_parent"
-    android:layout_height="450dp"
+    android:layout_height="470dp"
     android:layout_alignParentTop="true"
     android:layout_marginTop="4dp" />
 
 <LinearLayout
 
     android:orientation="horizontal"
-    android:layout_marginTop="460dp"
+    android:layout_marginTop="470dp"
     android:layout_width="match_parent"
     android:layout_height="80dp">
 
     <Button
-        android:layout_width="70dp"
+        android:layout_width="90dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="20dp"
         android:text="進む"
         android:id="@+id/go_button"/>
 
     <Button
-        android:layout_width="70dp"
+        android:layout_width="90dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="35dp"
         android:text="戻る"
         android:id="@+id/back_button"/>
 
     <Button
-        android:layout_width="120dp"
+        android:layout_width="90dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="50dp"
-        android:text="再生／停止"
+        android:text="再生"
         android:id="@+id/playandstop_button"/>
 
 </LinearLayout>
